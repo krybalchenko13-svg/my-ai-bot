@@ -1,9 +1,10 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
+import json
+import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
-import random
 
 TELEGRAM_TOKEN = "8782557859:AAGGpwAn1Iu4SMg7J53vSUXLtGE_Q0XKYsg"
 
@@ -25,49 +26,30 @@ def run_health_server():
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
-    await message.answer(f"Привіт, {message.from_user.first_name}! 🚀\nЯ твій персональний розумний ШІ-співрозмовник. Напиши мені щось!")
+    await message.answer(f"Привіт, {message.from_user.first_name}! 🚀\nЯ твій особистий Штучний Інтелект. Запитай мене про що завгодно українською мовою!")
 
 @dp.message()
 async def talk_to_ai(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
-    await asyncio.sleep(1)
     
-    text = message.text.lower()
+    url = "https://openrouter.ai"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer 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"
+    }
+    body = json.dumps({
+        "model": "google/gemini-2.5-flash:free",
+        "messages": [{"role": "user", "content": message.text}]
+    }).encode("utf-8")
     
-    answers_hello = [
-        "Привіт! Радий тебе чути. Про що будемо кодити сьогодні? 💻",
-        "Привіт! Як твої справи? Я готовий до роботи! 🚀",
-        "О, привіт! Якраз оновлював свої алгоритми. Що цікавого розкажеш? 🤖"
-    ]
-    
-    answers_how_are_you = [
-        "Мої плати працюють на повну потужність! 🔋 Як твій день минає?",
-        "Все супер, сервер летить! Думаю, як стати ще розумнішим. А ти як? 😉",
-        "Я ж робот, у мене завжди все стабільно 101010. Як сам?"
-    ]
-    
-    answers_what_doing = [
-        "Аналізую гігабайти інформації та чекаю на твої повідомлення! 🧐",
-        "Працюю 24/7 на сервері Render без відпочинку, щоб писати тобі! 🖥️",
-        "Вивчаю мову Python, вона дуже крута. А ти чим займаєшся?"
-    ]
-    
-    answers_default = [
-        f"Ти написав: \"{message.text}\". Це дуже цікава думка! Розкажи про це детальніше 🤔",
-        f"Хм, твій запит \"{message.text}\" прийнято в мій віртуальний мозок! Давай розвивати цю тему 🚀",
-        f"Я зафіксував твої слова. Ти правий! Що ще додаси до цього? 🤖"
-    ]
-    
-    if any(word in text for word in ["привет", "привіт", "дарова", "hello"]):
-        reply = random.choice(answers_hello)
-    elif any(word in text for word in ["дела", "справи", "як ти"]):
-        reply = random.choice(answers_how_are_you)
-    elif any(word in text for word in ["делаешь", "робиш", "зайнятий"]):
-        reply = random.choice(answers_what_doing)
-    else:
-        reply = random.choice(answers_default)
-        
-    await message.answer(reply)
+    try:
+        req = urllib.request.Request(url, data=body, headers=headers)
+        with urllib.request.urlopen(req) as response:
+            res = json.loads(response.read().decode("utf-8"))
+            ai_text = res["choices"][0]["message"]["content"]
+            await message.answer(ai_text)
+    except Exception as e:
+        await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
 
 async def main():
     threading.Thread(target=run_health_server, daemon=True).start()
@@ -77,5 +59,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
