@@ -12,7 +12,6 @@ GEMINI_KEY = "AIzaSyD" + "W8C_mYp82f" + "fW9rKPl8G" + "wS2g9Bf06fF4E"
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# Фейковий веб-сервер для Render
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -45,11 +44,12 @@ async def talk_to_ai(message: types.Message):
         await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
 
 async def main():
-    # Запускаємо фейковий сервер в окремому потоці
     threading.Thread(target=run_health_server, daemon=True).start()
     print("Ура! Твій ІІ-бот запущений і слухає команди...")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-await main()
+if __name__ == "__main__":
+    asyncio.run(main())
+
 
