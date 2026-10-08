@@ -1,3 +1,4 @@
+
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
@@ -32,24 +33,37 @@ async def cmd_start(message: types.Message):
 async def talk_to_ai(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
     
-    url = "https://openrouter.ai"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer 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"
-    }
+    url = "https://aryahcr.cc"
+    headers = {"Content-Type": "application/json"}
     body = json.dumps({
-        "model": "google/gemini-2.5-flash:free",
-        "messages": [{"role": "user", "content": message.text}]
+        "prompt": message.text,
+        "model": "gpt-4"
     }).encode("utf-8")
     
     try:
         req = urllib.request.Request(url, data=body, headers=headers)
         with urllib.request.urlopen(req) as response:
             res = json.loads(response.read().decode("utf-8"))
-            ai_text = res["choices"][0]["message"]["content"]
+            if "id" in res:
+                # Если апи вернул сырой json с текстом
+                url_get = f"https://aryahcr.cc/{res['id']}"
+                req_get = urllib.request.Request(url_get)
+                with urllib.request.urlopen(req_get) as res_get:
+                    final_res = json.loads(res_get.read().decode("utf-8"))
+                    ai_text = final_res.get("text", "Не вдалося отримати текст відповіді.")
+            else:
+                ai_text = res.get("text", "Ой, нейромережа задумалася. Спробуй ще раз!")
             await message.answer(ai_text)
     except Exception as e:
-        await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
+        # Резервный полностью открытый апи ИИ, если первый лагает
+        try:
+            url_backup = "https://lolhuman.xyz" + urllib.parse.quote(message.text)
+            req_b = urllib.request.Request(url_backup, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req_b) as response_b:
+                res_b = json.loads(response_b.read().decode("utf-8"))
+                await message.answer(res_b.get("result", "Повтори запит ще раз, будь ласка!"))
+        except:
+            await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
 
 async def main():
     threading.Thread(target=run_health_server, daemon=True).start()
