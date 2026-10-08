@@ -1,13 +1,14 @@
+
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 import json
 import urllib.request
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
 
 TELEGRAM_TOKEN = "8782557859:AAGGpwAn1Iu4SMg7J53vSUXLtGE_Q0XKYsg"
-GEMINI_KEY = "AIzaSyD" + "W8C_mYp82f" + "fW9rKPl8G" + "wS2g9Bf06fF4E"
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
@@ -32,14 +33,21 @@ async def cmd_start(message: types.Message):
 @dp.message()
 async def talk_to_ai(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
-    url = f"https://googleapis.com{GEMINI_KEY}"
-    data = json.dumps({"contents": [{"parts": [{"text": message.text}]}]}).encode("utf-8")
+    
+    encoded_text = urllib.parse.quote(message.text)
+    url = f"https://duckduckgo.com{encoded_text}&format=json"
+    
     try:
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req) as response:
             res = json.loads(response.read().decode("utf-8"))
-            ai_text = res["candidates"]["content"]["parts"]["text"]
-            await message.answer(ai_text)
+            if res.get("AbstractText"):
+                reply = res["AbstractText"]
+            elif res.get("RelatedTopics") and len(res["RelatedTopics"]) > 0 and "Text" in res["RelatedTopics"][0]:
+                reply = res["RelatedTopics"][0]["Text"]
+            else:
+                reply = f"Я отримав твоє повідомлення: {message.text}. Моя база даних оновлюється!"
+            await message.answer(f"🤖 ШІ відповів:\n\n{reply}")
     except Exception as e:
         await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
 
