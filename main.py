@@ -1,12 +1,9 @@
-
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
-import json
-import urllib.request
-import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
+import random
 
 TELEGRAM_TOKEN = "8782557859:AAGGpwAn1Iu4SMg7J53vSUXLtGE_Q0XKYsg"
 
@@ -28,28 +25,49 @@ def run_health_server():
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
-    await message.answer(f"Привіт, {message.from_user.first_name}! 🚀\nЯ твій особистий Штучний Інтелект. Можеш запитати мене про що завгодно українською мовою!")
+    await message.answer(f"Привіт, {message.from_user.first_name}! 🚀\nЯ твій персональний розумний ШІ-співрозмовник. Напиши мені щось!")
 
 @dp.message()
 async def talk_to_ai(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+    await asyncio.sleep(1)
     
-    encoded_text = urllib.parse.quote(message.text)
-    url = f"https://duckduckgo.com{encoded_text}&format=json"
+    text = message.text.lower()
     
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req) as response:
-            res = json.loads(response.read().decode("utf-8"))
-            if res.get("AbstractText"):
-                reply = res["AbstractText"]
-            elif res.get("RelatedTopics") and len(res["RelatedTopics"]) > 0 and "Text" in res["RelatedTopics"][0]:
-                reply = res["RelatedTopics"][0]["Text"]
-            else:
-                reply = f"Я отримав твоє повідомлення: {message.text}. Моя база даних оновлюється!"
-            await message.answer(f"🤖 ШІ відповів:\n\n{reply}")
-    except Exception as e:
-        await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
+    answers_hello = [
+        "Привіт! Радий тебе чути. Про що будемо кодити сьогодні? 💻",
+        "Привіт! Як твої справи? Я готовий до роботи! 🚀",
+        "О, привіт! Якраз оновлював свої алгоритми. Що цікавого розкажеш? 🤖"
+    ]
+    
+    answers_how_are_you = [
+        "Мої плати працюють на повну потужність! 🔋 Як твій день минає?",
+        "Все супер, сервер летить! Думаю, як стати ще розумнішим. А ти як? 😉",
+        "Я ж робот, у мене завжди все стабільно 101010. Як сам?"
+    ]
+    
+    answers_what_doing = [
+        "Аналізую гігабайти інформації та чекаю на твої повідомлення! 🧐",
+        "Працюю 24/7 на сервері Render без відпочинку, щоб писати тобі! 🖥️",
+        "Вивчаю мову Python, вона дуже крута. А ти чим займаєшся?"
+    ]
+    
+    answers_default = [
+        f"Ти написав: \"{message.text}\". Це дуже цікава думка! Розкажи про це детальніше 🤔",
+        f"Хм, твій запит \"{message.text}\" прийнято в мій віртуальний мозок! Давай розвивати цю тему 🚀",
+        f"Я зафіксував твої слова. Ти правий! Що ще додаси до цього? 🤖"
+    ]
+    
+    if any(word in text for word in ["привет", "привіт", "дарова", "hello"]):
+        reply = random.choice(answers_hello)
+    elif any(word in text for word in ["дела", "справи", "як ти"]):
+        reply = random.choice(answers_how_are_you)
+    elif any(word in text for word in ["делаешь", "робиш", "зайнятий"]):
+        reply = random.choice(answers_what_doing)
+    else:
+        reply = random.choice(answers_default)
+        
+    await message.answer(reply)
 
 async def main():
     threading.Thread(target=run_health_server, daemon=True).start()
