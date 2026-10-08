@@ -29,37 +29,25 @@ def run_health_server():
 async def cmd_start(message: types.Message):
     await message.answer(f"Привіт, {message.from_user.first_name}! 🚀\nЯ твій особистий Штучний Інтелект. Можеш запитати мене про що завгодно українською мовою!")
 
+@dp.message(lambda message: message.text == "АБ")
+async def special_secret_phrase(message: types.Message):
+    await message.answer("Треба завжди вірити в свого старшого сина🤫")
+
 @dp.message()
 async def talk_to_ai(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
     
-    url = "https://huggingface.co"
-    
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer hf_A" + "X" + "v" + "k" + "M" + "O" + "k" + "u" + "Y" + "R" + "b" + "V" + "e" + "D" + "p" + "M" + "v" + "g" + "k" + "N" + "w" + "l" + "p" + "v" + "Y" + "O" + "t" + "m" + "i" + "a" + "G" + "w" + "y" + "c" + "x" + "I" + "l" + "B" + "p"
-    }
-    
-    system_prompt = "You are a helpful AI assistant. Answer the user prompt directly and comprehensively. Always reply in Ukrainian language only."
-    full_prompt = f"<s>[SYSTEM] {system_prompt} [/SYSTEM] [USER] {message.text} [/USER] [ASSISTANT]"
-    
-    body = json.dumps({
-        "inputs": full_prompt,
-        "parameters": {"max_new_tokens": 500, "return_full_text": False}
-    }).encode("utf-8")
+    encoded_text = urllib.parse.quote(message.text)
+    url = f"https://pollinations.ai{encoded_text}?system=You+are+a+helpful+AI+assistant.+Always+reply+in+Ukrainian+language+only."
     
     try:
-        req = urllib.request.Request(url, data=body, headers=headers)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req) as response:
-            res = json.loads(response.read().decode("utf-8"))
-            
-            if isinstance(res, list) and len(res) > 0 and "generated_text" in res:
-                ai_text = res["generated_text"].strip()
-                if "[ASSISTANT]" in ai_text:
-                    ai_text = ai_text.split("[ASSISTANT]")[-1].strip()
+            ai_text = response.read().decode("utf-8").strip()
+            if ai_text:
                 await message.answer(ai_text)
             else:
-                await message.answer("Ой, ШІ надіслав незрозумілу відповідь. Спробуй ще раз!")
+                await message.answer("Ой, нейромережа надіслала порожню відповідь. Спробуй ще раз!")
     except Exception as e:
         await message.answer("Ой, нейромережа задумалася. Спробуй написати ще раз!")
 
